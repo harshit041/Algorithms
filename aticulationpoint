@@ -1,0 +1,115 @@
+//Program to find the ARTICULATION-POINTS in the undirected graph
+
+/*ARTICULATION-POINT(or CUT VERTEX)-:is a vertex(node) which when removed makes the graph disconnected OR more precisely 
+it increases the number of connected components.
+
+CONCLUSION-:
+1)End points of the bridge are the Articulation Points becoz when the node is removed the edge connected to it also get removed and
+we know that when bridge is removed from the graph the number of connected components get increased.Hence the end points of 
+bridges are Articulation Points.But this is not always true there are some cases where the both of the end-points of the bridge 
+are not Articaulation points.Only one of them is the Articaulation point not both.So, if the end-point of the bridge has 
+degree=1{ie. only one edge is connected to it} then that end-point is not the Articulation-point.  
+Hence the end-point of the bridge having degree more than 1 is always the Articulation Point.
+
+2)It is not neccesary for an Articulation point to be an end-point of a bridge.
+
+3)So,Finding the bridges Algorithm cannot be used to find the Articulation Points.
+
+ALGORITHM:-
+We will apply same algorithm{the one which is used to find the Bridges} with little modification.
+The modification is that in the bridge Algorithm we have taken {lowtime[adj_list[current][i]] > intime[current]} But in the 
+Articulation Point we have taken {lowtime[adj_list[current][i]] >= intime[current]} ie. there is an extra EQUALS TO sign(=).
+This is becoz in bridge-algorithm it is essential that {low[child] < in[node]} as it guarantee that child will remain connected 
+despite removing this edge....But in articulation-algorithm both ends of bridge can be articulation point and hence the equality 
+to ensure that we take both the child and node into account.
+
+But this algo is not applicable for the ROOT node.For that we have to find the number of children of the root node if ROOT node 
+have more than 1 child then it is the Articulation point.
+*/
+
+#include <bits/stdc++.h>
+#define MAXN 1000001
+#define endl '\n'
+#define ll long long
+using namespace std;
+
+vector<bool> visited(MAXN);
+vector<ll> intime(MAXN);
+vector<ll> lowtime(MAXN);
+set<ll> cutpoint;
+ll timer;
+
+//we have passed the parent so that we differentiate b/w ancestors and parent for the current node. 
+void dfs(vector<ll> adj_list[],ll current,ll parent){
+	visited[current]=true;
+	intime[current]=lowtime[current]=timer;
+	timer++;
+
+	ll children{0};
+	for(ll i=0;i<adj_list[current].size();i++){
+		if(adj_list[current][i]==parent)
+			continue;
+
+		if(visited[adj_list[current][i]]==false){ //means this is the forward-edge
+			dfs(adj_list,adj_list[current][i],current);
+
+			//this means that if the neighbour node has this nearest ancestor then the parent can also has this as its ancestor 
+			lowtime[current]=min(lowtime[current],lowtime[adj_list[current][i]]);
+ 
+			if(lowtime[adj_list[current][i]]>=intime[current] && parent!=-1) //Equals to(=) was not present in the Bridge Algo.
+				cutpoint.insert(current);
+
+			children++;
+		}
+		else{ //means this is the Back-edge
+			lowtime[current]=min(lowtime[current],intime[adj_list[current][i]]);
+		}
+	}
+
+	if(parent==-1 && children>1) //Root node case
+		cutpoint.insert(current);
+
+}
+
+void findArticulationPoint(vector<ll> adj_list[],ll nodes){
+	for(ll i=1;i<=nodes;i++){
+		visited[i]=false;
+		intime[i]=INT_MAX;
+		lowtime[i]=INT_MAX;
+	}
+	timer=0;
+
+	dfs(adj_list,1,-1);  
+}
+
+int main(){
+	cout<<"enter the number of nodes-:";
+	ll nodes{0};
+	cin>>nodes;
+
+	vector<ll> adj_list[nodes+1];
+
+	cout<<"Enter the number of edges-:";
+	ll edges{0};
+	cin>>edges;
+
+	for(ll i=0;i<edges;i++){
+		cout<<"Enter the end points for the edge "<<(i+1)<<"-:";
+		ll u{0};
+		ll v{0};
+		cin>>u>>v;
+		adj_list[u].push_back(v);
+		adj_list[v].push_back(u);
+	}
+
+	findArticulationPoint(adj_list,nodes);
+
+	cout<<"Number of Articulation Points = "<<cutpoint.size()<<endl;
+	cout<<"Articulation Points are-: ";
+	for(auto itr=cutpoint.begin();itr!=cutpoint.end();itr++)
+		cout<<*itr<<" ";
+	cout<<endl;
+
+	return 0;
+}
+
